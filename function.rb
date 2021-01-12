@@ -22,7 +22,7 @@ def main(event:, context:)
     # Case 2b: If wrong request content type, respond 415
     # Case 2c: If the body of request is not json, respond 422
   if event['httpMethod'] == 'POST' and event['path'] == '/token'
-    if event['headers']['Content_Type'] != 'application/json'
+    if event['headers']['Content-Type'] != 'application/json'
       return response(body: nil, status: 415)
     end
     if !valid_json?(event['body'])

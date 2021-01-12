@@ -25,7 +25,7 @@ def main(event:, context:)
     if event['headers']['Content_Type'] != 'application/json'
       return response(body: nil, status: 415)
     end
-    if !valid_json?(event)
+    if !valid_json?(event['body'])
       return response(body: nil, status: 422)
     end
     return response(body: event, status: 200)

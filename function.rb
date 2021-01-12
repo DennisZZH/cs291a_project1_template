@@ -5,46 +5,54 @@ require 'jwt'
 require 'pp'
 
 def main(event:, context:)
-    # You shouldn't need to use context, but its fields are explained here:
-    # https://docs.aws.amazon.com/lambda/latest/dg/ruby-context.html
-    # response(body: event, status: 200)
+  # You shouldn't need to use context, but its fields are explained here:
+  # https://docs.aws.amazon.com/lambda/latest/dg/ruby-context.html
+  # response(body: event, status: 200)
 
-    # Case 1: GET /
-        # Case 1a: On Success, return a json document (data), respond 200
-        # Case 1b: If the token is not yet valid, or expired, respond 401
-        # Case 1c: If a proper header is not provided, respond 403
-    if event['httpMethod'] == 'GET' and event['path'] == '/'
-      # puts "Case 1"
-        return response(body: event, status: 200)
-    end
+  # Case 1: GET /
+    # Case 1a: On Success, return a json document (data), respond 200
+    # Case 1b: If the token is not yet valid, or expired, respond 401
+    # Case 1c: If a proper header is not provided, respond 403
+  if event['httpMethod'] == 'GET' and event['path'] == '/'
+    return response(body: event, status: 200)
+  end
 
-    # Case 2: POST /token
-        # Case 2a: On Success, return a json document (JWT), respond 201
-        # Case 2b: If wrong request content type, respond 415
-        # Case 2c: If the body of request is not json, respond 422
-    if event['httpMethod'] == 'POST' and event['path'] == '/token'
-      # puts "Case 2"
-        return response(body: event, status: 200)
+  # Case 2: POST /token
+    # Case 2a: On Success, return a json document (JWT), respond 201
+    # Case 2b: If wrong request content type, respond 415
+    # Case 2c: If the body of request is not json, respond 422
+  if event['httpMethod'] == 'POST' and event['path'] == '/token'
+    if event['headers']['Content_Type'] != 'application/json'
+      return response(body: nil, status: 415)
     end
+    if !valid_json?(event)
+      return response(body: nil, status: 422)
+    end
+    return response(body: event, status: 200)
+  end
 
-    # Case 3: Requests to any other resources, respond 404
-    if event['path'] != '/' and event['path'] != '/token'
-       # puts "Case 3"
-       return response(body: nil, status: 404)
-    end
+  # Case 3: Requests to any other resources, respond 404
+  if event['path'] != '/' and event['path'] != '/token'
+    return response(body: nil, status: 404)
+  end
 
-    # Case 4: Requests to / or /token without appropriate HTTP method, respond 405
-    # puts "Case 4"
-    if event['httpMethod'] != 'GET' and event['httpMethod'] != 'POST'
-        return response(body: nil, status: 405)
-    elsif event['httpMethod'] == 'GET' and event['path'] == '/token'
-        return response(body: nil, status: 405)
-    elsif event['httpMethod'] == 'POST' and event['path'] == '/'
-        return response(body: nil, status: 405)
-    end
+  # Case 4: Requests to / or /token without appropriate HTTP method, respond 405
+  if event['httpMethod'] != 'GET' and event['httpMethod'] != 'POST'
+    return response(body: nil, status: 405)
+  elsif event['httpMethod'] == 'GET' and event['path'] == '/token'
+    return response(body: nil, status: 405)
+  elsif event['httpMethod'] == 'POST' and event['path'] == '/'
+    return response(body: nil, status: 405)
+  end
 
 end
 
+def valid_json?(json)
+  JSON.parse(json)
+  return true
+rescue JSON::ParserError => e
+  return false
+end
 
 def response(body: nil, status: 200)
   {

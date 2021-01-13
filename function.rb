@@ -10,14 +10,14 @@ def main(event:, context:)
   # response(body: event, status: 200)
 
   # Downcase all the key in the headers
-  event['headers'].transform_keys(&:downcase)
+  event['headers'].map_keys!(&:downcase)
 
   # Case 1: GET /
     # Case 1a: On Success, return a json document (data), respond 200
     # Case 1b: If the token is not yet valid, or expired, respond 401
     # Case 1c: If a proper header is not provided, respond 403
   if event['httpMethod'] == 'GET' and event['path'] == '/'
-    response(body: event, status: 200)
+    return response(body: event, status: 200)
   end
 
   # Case 2: POST /token
@@ -72,6 +72,21 @@ class MyJSON
     result.is_a?(Hash) || result.is_a?(Array)
   rescue JSON::ParserError, TypeError
     false
+  end
+end
+
+
+class Hash
+  def map_keys! &blk
+    keys.each do |k|
+      new_k = blk.call(k)
+      self[new_k] = delete(k)
+    end
+    self
+  end
+
+  def map_keys &blk
+    dup.map_keys!(&blk)
   end
 end
 

@@ -36,7 +36,7 @@ def main(event:, context:)
 
     # Generate a token
     payload = {
-      data: event['body'],
+      data: JSON.parse(event['body']),
       exp: Time.now.to_i + 5,
       nbf: Time.now.to_i + 2
     }

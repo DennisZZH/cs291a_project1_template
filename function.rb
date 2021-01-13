@@ -9,12 +9,15 @@ def main(event:, context:)
   # https://docs.aws.amazon.com/lambda/latest/dg/ruby-context.html
   # response(body: event, status: 200)
 
+  # Downcase all the key in the headers
+  event['headers'].transform_keys(&:downcase)
+
   # Case 1: GET /
     # Case 1a: On Success, return a json document (data), respond 200
     # Case 1b: If the token is not yet valid, or expired, respond 401
     # Case 1c: If a proper header is not provided, respond 403
   if event['httpMethod'] == 'GET' and event['path'] == '/'
-    return response(body: event, status: 200)
+    response(body: event, status: 200)
   end
 
   # Case 2: POST /token
@@ -23,7 +26,7 @@ def main(event:, context:)
     # Case 2c: If the body of request is not json, respond 422
   if event['httpMethod'] == 'POST' and event['path'] == '/token'
     
-    if event['headers']['Content-Type'] != 'application/json'
+    if event['headers']['content-type'] != 'application/json'
       return response(body: nil, status: 415)
     end
 

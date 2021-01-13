@@ -69,7 +69,7 @@ class MyJSON
   def self.valid?(value)
     result = JSON.parse(value)
 
-    result.is_a?(Hash) || result.is_a?(Array)
+    result.is_a?(Hash) || result.is_a?(Array) || result.is_a?(Numeric)
   rescue JSON::ParserError, TypeError
     false
   end

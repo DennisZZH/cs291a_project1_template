@@ -27,7 +27,7 @@ def main(event:, context:)
       return response(body: nil, status: 415)
     end
 
-    if MyJSON.valid?(event['body'])
+    if !MyJSON.valid?(event['body'])
       return response(body: nil, status: 422)
     end
 

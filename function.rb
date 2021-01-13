@@ -22,13 +22,27 @@ def main(event:, context:)
     # Case 2b: If wrong request content type, respond 415
     # Case 2c: If the body of request is not json, respond 422
   if event['httpMethod'] == 'POST' and event['path'] == '/token'
+    
     if event['headers']['Content-Type'] != 'application/json'
       return response(body: nil, status: 415)
     end
-    if !valid_json?(event['body'])
+
+    if MyJSON.valid?(event['body'])
       return response(body: nil, status: 422)
     end
-    return response(body: event, status: 200)
+
+    # Generate a token
+    payload = {
+      data: event['body'],
+      exp: Time.now.to_i + 5,
+      nbf: Time.now.to_i + 2
+    }
+    token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
+
+    json_doc = {'token' => token}
+
+    return response(body: json_doc, status: 201)
+   
   end
 
   # Case 3: Requests to any other resources, respond 404
@@ -47,12 +61,17 @@ def main(event:, context:)
 
 end
 
-def valid_json?(json)
-  JSON.parse(json)
-  return true
-rescue JSON::ParserError => e
-  return false
+
+class MyJSON
+  def self.valid?(value)
+    result = JSON.parse(value)
+
+    result.is_a?(Hash) || result.is_a?(Array)
+  rescue JSON::ParserError, TypeError
+    false
+  end
 end
+
 
 def response(body: nil, status: 200)
   {

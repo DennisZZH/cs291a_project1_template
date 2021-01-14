@@ -17,24 +17,32 @@ def main(event:, context:)
     
     # Downcase all the key in the headers
     event['headers'].map_keys!(&:downcase)
+    
+    if event['headers']['authorization'].nil?
+      return response(body: nil, status: 403)
+    end
 
-    auth = event['headers']['authorization'].split(" ")
+    auth = event['headers']['authorization']&.split
 
-    if auth.length() != 2 or auth[0] != 'Bearer' or auth[1].nil?
+    if auth.length() != 2 or auth[0] != 'Bearer'
       return response(body: nil, status: 403)
     end
 
     begin
-      decoded_token = JWT.decode auth[1], ENV['JWT_SECRET'], true, 'HS256'
-    rescue DecodeError
+      decoded_token = JWT.decode auth[1], ENV['JWT_SECRET'], true, { algorithm: 'HS256' }
+    rescue JWT::ExpiredSignature
+      return response(body: nil, status: 401)
+    rescue JWT::ImmatureSignature
+      return response(body: nil, status: 401)
+    rescue
       return response(body: nil, status: 403)
     end
 
-    if decoded_hash[0]['exp'] < Time.now.to_i or decode_hash[0]['nbf'] > Time.now.to_i
-      return response(body: nil, status: 401)
-    end
+    #if decoded_token[0]['exp'] < Time.now.to_i or decoded_token[0]['nbf'] > Time.now.to_i
+     # return response(body: nil, status: 401)
+    #end
 
-    return response(body: decode_hash[0]['data'], status: 200)
+    return response(body: decoded_token[0]['data'], status: 200)
     
   end
 
@@ -147,4 +155,11 @@ if $PROGRAM_NAME == __FILE__
                'httpMethod' => 'GET',
                'path' => '/'
              })
+
+   # Tests
+  for header_value in [nil, "", "Bearer: foobar", "NotBearer {token}"]
+    puts header_value&.split
+    puts '\n'
+  end
+
 end

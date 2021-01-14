@@ -14,7 +14,28 @@ def main(event:, context:)
     # Case 1b: If the token is not yet valid, or expired, respond 401
     # Case 1c: If a proper header is not provided, respond 403
   if event['httpMethod'] == 'GET' and event['path'] == '/'
-    return response(body: event, status: 200)
+    
+    # Downcase all the key in the headers
+    event['headers'].map_keys!(&:downcase)
+
+    auth = event['headers']['authorization'].split(" ")
+
+    if auth.length() != 2 or auth[0] != 'Bearer' or auth[1].nil?
+      return response(body: nil, status: 403)
+    end
+
+    begin
+      decoded_token = JWT.decode auth[1], ENV['JWT_SECRET'], true, 'HS256'
+    rescue DecodeError
+      return response(body: nil, status: 403)
+    end
+
+    if decoded_hash[0]['exp'] < Time.now.to_i or decode_hash[0]['nbf'] > Time.now.to_i
+      return response(body: nil, status: 401)
+    end
+
+    return response(body: decode_hash[0]['data'], status: 200)
+    
   end
 
   # Case 2: POST /token
